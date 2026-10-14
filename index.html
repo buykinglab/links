@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>생활꿀템 모음</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f6f5f2; --card:#fff; --text:#18181b; --sub:#71717a; --accent:#ffd600; --line:#e7e5e4; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111113; --card:#1c1c1f; --text:#f4f4f5; --sub:#a1a1aa; --line:#2a2a2e; }
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--text);
+         max-width:480px; margin:0 auto; padding:28px 16px 48px; }
+  header { margin-bottom:20px; }
+  .logo { display:inline-block; background:var(--accent); color:#000; font-weight:900;
+          padding:4px 10px; border-radius:8px; font-size:13px; letter-spacing:.02em; }
+  h1 { font-size:24px; font-weight:900; margin-top:10px; line-height:1.3; }
+  header p { color:var(--sub); font-size:14px; margin-top:6px; }
+  #search { width:100%; padding:13px 16px; border:1px solid var(--line); border-radius:12px;
+            background:var(--card); color:var(--text); font-size:16px; margin-bottom:14px; }
+  .item { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line);
+          border-radius:16px; padding:10px; margin-bottom:10px; text-decoration:none; color:inherit; }
+  .item:active { transform:scale(.98); }
+  .thumb { position:relative; flex:0 0 76px; height:76px; border-radius:12px; overflow:hidden; background:#fff; }
+  .thumb img { width:100%; height:100%; object-fit:contain; }
+  .no { position:absolute; left:4px; top:4px; min-width:26px; height:26px; padding:0 6px; border-radius:8px;
+        background:var(--accent); color:#000; font-weight:900; font-size:14px; display:grid; place-items:center; }
+  .info { flex:1; min-width:0; }
+  .info b { display:block; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .info .desc { font-size:13px; color:var(--sub); display:block; margin-top:2px; }
+  .new { display:inline-block; font-size:11px; font-weight:700; background:#ef4444; color:#fff; border-radius:6px; padding:1px 6px; margin-left:4px; vertical-align:2px; }
+  .go { flex:0 0 auto; font-size:13px; font-weight:700; color:var(--sub); }
+  .empty { text-align:center; color:var(--sub); padding:40px 0; }
+  footer { margin-top:28px; font-size:12px; color:var(--sub); line-height:1.7; }
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">🛒 DAILY PICK</span>
+  <h1>써보고 고른<br>생활 꿀템 모음</h1>
+  <p>영상에 나온 번호를 찾아 눌러주세요</p>
+</header>
+
+<input id="search" type="search" inputmode="search" placeholder="번호 또는 상품명 검색">
+<main id="list"><p class="empty">불러오는 중…</p></main>
+
+<footer>
+  · 가격·배송·상세 스펙은 구매 페이지에서 꼭 확인해 주세요.<br>
+  · 이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+</footer>
+
+<script>
+const list = document.getElementById('list');
+let LINKS = [];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const isNew = d => d && (Date.now() - new Date(d)) < 3 * 864e5;
+
+function render(q = "") {
+  const k = q.trim().toLowerCase();
+  const rows = LINKS.filter(l => !k || String(l.no) === k || l.name.toLowerCase().includes(k));
+  list.innerHTML = rows.map(l => `
+    <a class="item" href="${esc(l.url)}" target="_blank" rel="noopener sponsored">
+      <div class="thumb">${l.img ? `<img src="${esc(l.img)}" alt="" loading="lazy">` : ""}<div class="no">${l.no}</div></div>
+      <div class="info"><b>${esc(l.name)}${isNew(l.added) ? '<span class="new">NEW</span>' : ''}</b><span class="desc">${esc(l.desc)}</span></div>
+      <span class="go">보기 ›</span>
+    </a>`).join("") || '<p class="empty">검색 결과가 없어요</p>';
+}
+
+fetch('products.json?v=' + Date.now())
+  .then(r => r.json()).then(d => { LINKS = d; render(); })
+  .catch(() => list.innerHTML = '<p class="empty">목록을 불러오지 못했어요</p>');
+document.getElementById('search').addEventListener('input', e => render(e.target.value));
+</script>
+</body>
+</html>
