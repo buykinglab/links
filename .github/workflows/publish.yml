@@ -1,0 +1,35 @@
+# 인스타 예약 게시 — 10분마다 깨어나서 시간이 된 릴스를 올림 (쇼츠 스튜디오가 자동으로 넣어 둔 파일)
+name: instagram-scheduled-publish
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: ig-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - name: publish due reels
+        run: python .github/scripts/publish_queue.py
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      - name: save results
+        run: |
+          git config user.name "scheduled-publisher"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A .
+          if ! git diff --cached --quiet; then
+            git commit -q -m "scheduled publish results"
+            for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+          fi
